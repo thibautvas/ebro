@@ -13,6 +13,7 @@ const Window = struct {
     rect: layout.Rect = .{ .x = 0, .y = 0, .w = 0, .h = 0 },
     workspace: u8,
     visible: bool = false,
+    decorate: bool = true,
 };
 
 const Output = struct {
@@ -194,6 +195,7 @@ pub const Wm = struct {
     fn windowListener(_: *river.WindowV1, event: river.WindowV1.Event, win: *Window) void {
         switch (event) {
             .closed => win.wm.removeWindow(win),
+            .decoration_hint => win.decorate = true,
             else => {},
         }
     }
@@ -332,7 +334,14 @@ pub const Wm = struct {
         const rects = gpa.alloc(layout.Rect, n) catch @panic("OOM");
         defer gpa.free(rects);
 
-        for (wm.windows.items) |win| win.visible = false;
+        for (wm.windows.items) |win| {
+            win.visible = false;
+            if (win.decorate) {
+                win.proxy.useSsd();
+                win.proxy.setTiled(.{ .top = true, .bottom = true, .left = true, .right = true });
+                win.decorate = false;
+            }
+        }
         for (wm.outputs.items) |out| {
             if (out.active == 0) continue;
             var k: usize = 0;
