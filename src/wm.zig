@@ -345,6 +345,11 @@ pub const Wm = struct {
         const old = win.workspace;
         win.workspace = ws;
         wm.forget(win, old, std.mem.indexOfScalar(*Window, wm.windows.items, win).?);
+        if (win.fullscreen) {
+            win.proxy.exitFullscreen();
+            win.proxy.informNotFullscreen();
+            win.fullscreen = false;
+        }
         wm.focus(win);
     }
 
