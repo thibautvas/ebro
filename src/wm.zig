@@ -302,7 +302,31 @@ pub const Wm = struct {
             .spawn => |cmd| spawn(cmd),
             .close => if (wm.focused) |win| win.proxy.close(),
             .exit => wm.proxy.exitSession(),
+            .focus_workspace => |ws| wm.focusWorkspace(ws),
+            .move_to_workspace => |ws| wm.moveToWorkspace(ws),
         }
+    }
+
+    fn focusWorkspace(wm: *Wm, ws: u8) void {
+        if (ws == 0 or ws > config.workspace_count) return;
+        wm.workspace = ws;
+        wm.focused = wm.last_focused[ws - 1] orelse wm.nearest(ws, 0);
+        wm.focus_dirty = true;
+    }
+
+    fn moveToWorkspace(wm: *Wm, ws: u8) void {
+        if (ws == 0 or ws > config.workspace_count) return;
+        const win = wm.focused orelse return;
+        if (win.workspace == ws) return;
+        const old = win.workspace;
+        win.workspace = ws;
+        wm.forget(win, old, std.mem.indexOfScalar(*Window, wm.windows.items, win).?);
+        if (win.fullscreen) {
+            win.proxy.exitFullscreen();
+            win.proxy.informNotFullscreen();
+            win.fullscreen = false;
+        }
+        wm.focus(win);
     }
 
     fn manage(wm: *Wm) void {
