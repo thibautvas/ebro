@@ -11,6 +11,7 @@ const Window = struct {
     proxy: *river.WindowV1,
     node: *river.NodeV1,
     rect: layout.Rect = .{ .x = 0, .y = 0, .w = 0, .h = 0 },
+    app_id: ?[]const u8 = null,
     workspace: u8,
     visible: bool = false,
     decorate: bool = true,
@@ -196,6 +197,13 @@ pub const Wm = struct {
         switch (event) {
             .closed => win.wm.removeWindow(win),
             .decoration_hint => win.decorate = true,
+            .app_id => |e| {
+                if (win.app_id) |old| gpa.free(old);
+                win.app_id = if (e.app_id) |id|
+                    gpa.dupe(u8, std.mem.span(id)) catch @panic("OOM")
+                else
+                    null;
+            },
             else => {},
         }
     }
@@ -208,6 +216,7 @@ pub const Wm = struct {
             wm.focused = wm.last_focused[win.workspace - 1];
             wm.focus_dirty = true;
         }
+        if (win.app_id) |id| gpa.free(id);
         win.node.destroy();
         win.proxy.destroy();
         gpa.destroy(win);
@@ -302,9 +311,21 @@ pub const Wm = struct {
             .spawn => |cmd| spawn(cmd),
             .close => if (wm.focused) |win| win.proxy.close(),
             .exit => wm.proxy.exitSession(),
+            .launch_or_focus => |lf| wm.launchOrFocus(lf),
             .focus_workspace => |ws| wm.focusWorkspace(ws),
             .move_to_workspace => |ws| wm.moveToWorkspace(ws),
         }
+    }
+
+    fn launchOrFocus(wm: *Wm, lf: config.LaunchOrFocus) void {
+        for (wm.windows.items) |win| {
+            const id = win.app_id orelse continue;
+            if (std.mem.eql(u8, id, lf.app_id)) {
+                wm.focus(win);
+                return;
+            }
+        }
+        spawn(lf.cmd);
     }
 
     fn focusWorkspace(wm: *Wm, ws: u8) void {
