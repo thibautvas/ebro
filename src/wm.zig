@@ -298,6 +298,7 @@ pub const Wm = struct {
     fn apply(wm: *Wm, action: config.Action) void {
         switch (action) {
             .spawn => |cmd| spawn(cmd),
+            .close => if (wm.focused) |win| win.proxy.close(),
             .exit => wm.proxy.exitSession(),
         }
     }
