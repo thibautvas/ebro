@@ -18,6 +18,12 @@ pub fn build(b: *std.Build) void {
 
     const wayland = b.createModule(.{ .root_source_file = scanner.result });
 
+    const ebro = b.createModule(.{ .root_source_file = b.path("src/ebro.zig") });
+    ebro.addImport("wayland", wayland);
+
+    const config = b.createModule(.{ .root_source_file = b.path("src/config.zig") });
+    config.addImport("ebro", ebro);
+
     const exe = b.addExecutable(.{
         .name = "ebro",
         .root_module = b.createModule(.{
@@ -28,6 +34,8 @@ pub fn build(b: *std.Build) void {
         }),
     });
     exe.root_module.addImport("wayland", wayland);
+    exe.root_module.addImport("ebro", ebro);
+    exe.root_module.addImport("config", config);
     exe.root_module.linkSystemLibrary("wayland-client", .{});
     b.installArtifact(exe);
 }
