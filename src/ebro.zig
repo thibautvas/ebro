@@ -17,8 +17,10 @@ pub const Action = union(enum) {
     toggle_fullscreen: void,
 };
 
+pub const Modifiers = river.SeatV1.Modifiers;
+
 pub const Bind = struct {
-    mods: river.SeatV1.Modifiers,
+    mods: Modifiers,
     keysym: u32,
     action: Action,
     locked: bool = false,
