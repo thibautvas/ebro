@@ -1,7 +1,8 @@
 const std = @import("std");
 const wl = @import("wayland").client.wl;
 const river = @import("wayland").client.river;
-const config = @import("config.zig");
+const ebro = @import("ebro");
+const config = @import("config");
 const layout = @import("layout.zig");
 
 const gpa = std.heap.c_allocator;
@@ -48,7 +49,7 @@ pub fn autostart() void {
 const Binding = struct {
     wm: *Wm,
     proxy: *river.XkbBindingV1,
-    action: config.Action,
+    action: ebro.Action,
     locked: bool,
     enabled: bool = false,
 };
@@ -67,7 +68,7 @@ pub const Wm = struct {
     workspace: u8 = 1,
     last_focused: [config.workspace_count]?*Window = @splat(null),
     default_output: ?*Output = null,
-    pending: ?config.Action = null,
+    pending: ?ebro.Action = null,
     locked: bool = false,
 
     pub fn init(
@@ -307,7 +308,7 @@ pub const Wm = struct {
         if (wm.outputFor(wm.workspace)) |out| out.active = wm.workspace;
     }
 
-    fn apply(wm: *Wm, action: config.Action) void {
+    fn apply(wm: *Wm, action: ebro.Action) void {
         switch (action) {
             .spawn => |cmd| spawn(cmd),
             .close => if (wm.focused) |win| win.proxy.close(),
@@ -321,7 +322,7 @@ pub const Wm = struct {
         }
     }
 
-    fn launchOrFocus(wm: *Wm, lf: config.LaunchOrFocus) void {
+    fn launchOrFocus(wm: *Wm, lf: ebro.LaunchOrFocus) void {
         for (wm.windows.items) |win| {
             const id = win.app_id orelse continue;
             if (std.mem.eql(u8, id, lf.app_id)) {

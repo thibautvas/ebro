@@ -43,12 +43,14 @@ and exits with status 1 if another window manager is already connected.
 All configuration lives in `src/config.zig` and is compiled in.
 Edit it and rebuild:
 ```zig
+const ebro = @import("ebro");
+
 pub const workspace_count = 3;
 pub const workspace_outputs = [workspace_count]?[]const u8{ "DP-2", "DP-2", "eDP-1" };
 
 pub const autostart = [_][:0]const u8{"foot --server"};
 
-pub const binds = [_]Bind{
+pub const binds = [_]ebro.Bind{
     .{ .mods = .{ .mod4 = true }, .keysym = 'k', .action = .{ .spawn = "footclient" } },
     .{ .mods = .{ .mod4 = true }, .keysym = 'm', .action = .exit },
 };
