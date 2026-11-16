@@ -60,8 +60,20 @@ pub const binds = [_]ebro.Bind{
   `null` falls back to the first output
 - `keysym` is an xkb keysym value
 - `mods` accepts `shift`, `ctrl`, `mod1` (alt), `mod4` (super)
-- `spawn` commands run through `/bin/sh`, pipes and arguments work
 - `.locked = true` on a bind keeps it active while the screen is locked
+
+Available actions:
+| Action | Effect |
+| --- | --- |
+| `.{ .spawn = "cmd" }` | Run `cmd` through `/bin/sh`, pipes and arguments work |
+| `.close` | Close the focused window |
+| `.exit` | End the river session |
+| `.{ .launch_or_focus = .{ .app_id = "id", .cmd = "cmd" } }` | Focus the first window with app_id `id`, or spawn `cmd` if there is none |
+| `.{ .focus_workspace = n }` | Switch to workspace `n` (1-based) |
+| `.{ .move_to_workspace = n }` | Move the focused window to workspace `n` and follow it there |
+| `.focus_next` | Focus the next window on the current workspace, wrapping around |
+| `.swap_master` | Swap the focused window with the master window |
+| `.toggle_fullscreen` | Toggle fullscreen for the focused window |
 
 The default config only binds super+m to exit the session.
 
