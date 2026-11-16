@@ -5,9 +5,21 @@ pub const workspace_outputs = [workspace_count]?[]const u8{null};
 
 pub const autostart = [_][:0]const u8{};
 
+pub const LaunchOrFocus = struct {
+    app_id: []const u8,
+    cmd: [:0]const u8,
+};
+
 pub const Action = union(enum) {
     spawn: [:0]const u8,
+    close: void,
     exit: void,
+    launch_or_focus: LaunchOrFocus,
+    focus_workspace: u8,
+    move_to_workspace: u8,
+    focus_next: void,
+    swap_master: void,
+    toggle_fullscreen: void,
 };
 
 pub const Bind = struct {
