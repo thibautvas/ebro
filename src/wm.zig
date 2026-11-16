@@ -12,6 +12,7 @@ const Window = struct {
     node: *river.NodeV1,
     rect: layout.Rect = .{ .x = 0, .y = 0, .w = 0, .h = 0 },
     app_id: ?[]const u8 = null,
+    fullscreen: bool = false,
     workspace: u8,
     visible: bool = false,
     decorate: bool = true,
