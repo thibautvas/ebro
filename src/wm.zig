@@ -12,6 +12,8 @@ const Window = struct {
     proxy: *river.WindowV1,
     node: *river.NodeV1,
     rect: layout.Rect = .{ .x = 0, .y = 0, .w = 0, .h = 0 },
+    app_id: ?[]const u8 = null,
+    fullscreen: bool = false,
     workspace: u8,
     visible: bool = false,
     decorate: bool = true,
@@ -197,6 +199,13 @@ pub const Wm = struct {
         switch (event) {
             .closed => win.wm.removeWindow(win),
             .decoration_hint => win.decorate = true,
+            .app_id => |e| {
+                if (win.app_id) |old| gpa.free(old);
+                win.app_id = if (e.app_id) |id|
+                    gpa.dupe(u8, std.mem.span(id)) catch @panic("OOM")
+                else
+                    null;
+            },
             else => {},
         }
     }
@@ -209,6 +218,7 @@ pub const Wm = struct {
             wm.focused = wm.last_focused[win.workspace - 1];
             wm.focus_dirty = true;
         }
+        if (win.app_id) |id| gpa.free(id);
         win.node.destroy();
         win.proxy.destroy();
         gpa.destroy(win);
@@ -301,7 +311,81 @@ pub const Wm = struct {
     fn apply(wm: *Wm, action: ebro.Action) void {
         switch (action) {
             .spawn => |cmd| spawn(cmd),
+            .close => if (wm.focused) |win| win.proxy.close(),
             .exit => wm.proxy.exitSession(),
+            .launch_or_focus => |lf| wm.launchOrFocus(lf),
+            .focus_workspace => |ws| wm.focusWorkspace(ws),
+            .move_to_workspace => |ws| wm.moveToWorkspace(ws),
+            .focus_next => wm.focusNext(),
+            .swap_master => wm.swapMaster(),
+            .toggle_fullscreen => wm.toggleFullscreen(),
+        }
+    }
+
+    fn launchOrFocus(wm: *Wm, lf: ebro.LaunchOrFocus) void {
+        for (wm.windows.items) |win| {
+            const id = win.app_id orelse continue;
+            if (std.mem.eql(u8, id, lf.app_id)) {
+                wm.focus(win);
+                return;
+            }
+        }
+        spawn(lf.cmd);
+    }
+
+    fn focusWorkspace(wm: *Wm, ws: u8) void {
+        if (ws == 0 or ws > config.workspace_count) return;
+        wm.workspace = ws;
+        wm.focused = wm.last_focused[ws - 1] orelse wm.nearest(ws, 0);
+        wm.focus_dirty = true;
+    }
+
+    fn moveToWorkspace(wm: *Wm, ws: u8) void {
+        if (ws == 0 or ws > config.workspace_count) return;
+        const win = wm.focused orelse return;
+        if (win.workspace == ws) return;
+        const old = win.workspace;
+        win.workspace = ws;
+        wm.forget(win, old, std.mem.indexOfScalar(*Window, wm.windows.items, win).?);
+        if (win.fullscreen) {
+            win.proxy.exitFullscreen();
+            win.proxy.informNotFullscreen();
+            win.fullscreen = false;
+        }
+        wm.focus(win);
+    }
+
+    fn focusNext(wm: *Wm) void {
+        const items = wm.windows.items;
+        const start = if (wm.focused) |f| std.mem.indexOfScalar(*Window, items, f).? + 1 else 0;
+        for (0..items.len) |k| {
+            const win = items[(start + k) % items.len];
+            if (win.workspace == wm.workspace) return wm.focus(win);
+        }
+    }
+
+    fn swapMaster(wm: *Wm) void {
+        const win = wm.focused orelse return;
+        const items = wm.windows.items;
+        const i = std.mem.indexOfScalar(*Window, items, win).?;
+        for (items, 0..) |other, j| {
+            if (j == i or other.workspace != win.workspace) continue;
+            std.mem.swap(*Window, &items[i], &items[j]);
+            return;
+        }
+    }
+
+    fn toggleFullscreen(wm: *Wm) void {
+        const win = wm.focused orelse return;
+        if (win.fullscreen) {
+            win.proxy.exitFullscreen();
+            win.proxy.informNotFullscreen();
+            win.fullscreen = false;
+        } else {
+            const out = wm.outputFor(win.workspace) orelse return;
+            win.proxy.fullscreen(out.proxy);
+            win.proxy.informFullscreen();
+            win.fullscreen = true;
         }
     }
 
