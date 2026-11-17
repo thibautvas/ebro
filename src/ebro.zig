@@ -23,3 +23,8 @@ pub const Bind = struct {
     action: Action,
     locked: bool = false,
 };
+
+pub const Rule = struct {
+    app_id: []const u8,
+    workspace: u8,
+};
