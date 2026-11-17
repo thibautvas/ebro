@@ -2,11 +2,13 @@ const std = @import("std");
 const wl = @import("wayland").client.wl;
 const river = @import("wayland").client.river;
 const wm_mod = @import("wm.zig");
+const input = @import("input.zig");
 
 const Globals = struct {
     manager: ?*river.WindowManagerV1 = null,
     xkb: ?*river.XkbBindingsV1 = null,
     layer_shell: ?*river.LayerShellV1 = null,
+    input_manager: ?*river.InputManagerV1 = null,
 };
 
 pub fn main() !void {
@@ -25,6 +27,7 @@ pub fn main() !void {
         registry,
     );
     wm.listen();
+    input.init(globals.input_manager);
     wm_mod.autostart();
 
     while (true) {
@@ -41,6 +44,9 @@ fn registryListener(registry: *wl.Registry, event: wl.Registry.Event, globals: *
                 globals.xkb = registry.bind(g.name, river.XkbBindingsV1, 2) catch return;
             } else if (std.mem.orderZ(u8, g.interface, river.LayerShellV1.interface.name) == .eq) {
                 globals.layer_shell = registry.bind(g.name, river.LayerShellV1, 1) catch return;
+            } else if (std.mem.orderZ(u8, g.interface, river.InputManagerV1.interface.name) == .eq) {
+                if (g.version < 2) return;
+                globals.input_manager = registry.bind(g.name, river.InputManagerV1, 2) catch return;
             }
         },
         .global_remove => {},

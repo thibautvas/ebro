@@ -13,6 +13,7 @@ It runs as a regular wayland client inside a river session.
 - Key bindings through xkb
 - Autostart commands
 - Window rules: send apps to a workspace by app_id
+- Keyboard repeat rate and delay
 - Configured at compile time:
   no config parser, no runtime dependencies except `libwayland-client`
 
@@ -63,6 +64,7 @@ pub const binds = [_]ebro.Bind{
 - `mods` accepts `shift`, `ctrl`, `mod1` (alt), `mod4` (super)
 - `.locked = true` on a bind keeps it active while the screen is locked
 - `rules` makes a new window with matching app_id open on the specified workspace
+- `keyboard` sets the repeat rate and delay
 
 Available actions:
 | Action | Effect |

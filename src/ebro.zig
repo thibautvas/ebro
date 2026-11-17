@@ -28,3 +28,8 @@ pub const Rule = struct {
     app_id: []const u8,
     workspace: u8,
 };
+
+pub const Keyboard = struct {
+    repeat_rate: i32 = 25,
+    repeat_delay: i32 = 600,
+};
