@@ -7,6 +7,8 @@ const layout = @import("layout.zig");
 
 const gpa = std.heap.c_allocator;
 
+const rules: []const ebro.Rule = if (@hasDecl(config, "rules")) &config.rules else &.{};
+
 const Window = struct {
     wm: *Wm,
     proxy: *river.WindowV1,
@@ -200,11 +202,13 @@ pub const Wm = struct {
             .closed => win.wm.removeWindow(win),
             .decoration_hint => win.decorate = true,
             .app_id => |e| {
+                const first = win.app_id == null;
                 if (win.app_id) |old| gpa.free(old);
                 win.app_id = if (e.app_id) |id|
                     gpa.dupe(u8, std.mem.span(id)) catch @panic("OOM")
                 else
                     null;
+                if (first) win.wm.applyRules(win);
             },
             else => {},
         }
@@ -340,10 +344,21 @@ pub const Wm = struct {
         wm.focus_dirty = true;
     }
 
+    fn applyRules(wm: *Wm, win: *Window) void {
+        const id = win.app_id orelse return;
+        for (rules) |rule| {
+            if (std.mem.eql(u8, id, rule.app_id)) return wm.relocate(win, rule.workspace);
+        }
+    }
+
     fn moveToWorkspace(wm: *Wm, ws: u8) void {
         if (ws == 0 or ws > config.workspace_count) return;
         const win = wm.focused orelse return;
-        if (win.workspace == ws) return;
+        wm.relocate(win, ws);
+    }
+
+    fn relocate(wm: *Wm, win: *Window, ws: u8) void {
+        if (win.workspace == ws) return wm.focus(win);
         const old = win.workspace;
         win.workspace = ws;
         wm.forget(win, old, std.mem.indexOfScalar(*Window, wm.windows.items, win).?);
