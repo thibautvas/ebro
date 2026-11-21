@@ -320,6 +320,7 @@ pub const Wm = struct {
             .launch_or_focus => |lf| wm.launchOrFocus(lf),
             .focus_workspace => |ws| wm.focusWorkspace(ws),
             .move_to_workspace => |ws| wm.moveToWorkspace(ws),
+            .summon => |app_id| wm.summon(app_id),
             .focus_next => wm.focusNext(),
             .swap_master => wm.swapMaster(),
             .toggle_fullscreen => wm.toggleFullscreen(),
@@ -355,6 +356,13 @@ pub const Wm = struct {
         if (ws == 0 or ws > config.workspace_count) return;
         const win = wm.focused orelse return;
         wm.relocate(win, ws);
+    }
+
+    fn summon(wm: *Wm, app_id: []const u8) void {
+        for (wm.windows.items) |win| {
+            const id = win.app_id orelse continue;
+            if (std.mem.eql(u8, id, app_id)) return wm.relocate(win, wm.workspace);
+        }
     }
 
     fn relocate(wm: *Wm, win: *Window, ws: u8) void {

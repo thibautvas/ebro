@@ -75,6 +75,7 @@ Available actions:
 | `.{ .launch_or_focus = .{ .app_id = "id", .cmd = "cmd" } }` | Focus the first window with app_id `id`, or spawn `cmd` if there is none |
 | `.{ .focus_workspace = n }` | Switch to workspace `n` (1-based) |
 | `.{ .move_to_workspace = n }` | Move the focused window to workspace `n` and follow it there |
+| `.{ .summon = "id" }` | Move the first window with app_id `id` to the current workspace and focus it |
 | `.focus_next` | Focus the next window on the current workspace, wrapping around |
 | `.swap_master` | Swap the focused window with the master window |
 | `.toggle_fullscreen` | Toggle fullscreen for the focused window |
