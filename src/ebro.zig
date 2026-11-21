@@ -13,6 +13,7 @@ pub const Action = union(enum) {
     focus_workspace: u8,
     move_to_workspace: u8,
     summon: []const u8,
+    reset_rules: void,
     focus_next: void,
     swap_master: void,
     toggle_fullscreen: void,

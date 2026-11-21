@@ -321,6 +321,7 @@ pub const Wm = struct {
             .focus_workspace => |ws| wm.focusWorkspace(ws),
             .move_to_workspace => |ws| wm.moveToWorkspace(ws),
             .summon => |app_id| wm.summon(app_id),
+            .reset_rules => wm.resetRules(),
             .focus_next => wm.focusNext(),
             .swap_master => wm.swapMaster(),
             .toggle_fullscreen => wm.toggleFullscreen(),
@@ -365,8 +366,26 @@ pub const Wm = struct {
         }
     }
 
+    fn resetRules(wm: *Wm) void {
+        for (wm.windows.items) |win| {
+            const id = win.app_id orelse continue;
+            for (rules) |rule| {
+                if (std.mem.eql(u8, id, rule.app_id)) {
+                    wm.move(win, rule.workspace);
+                    break;
+                }
+            }
+        }
+        if (wm.focused) |f| if (f.workspace != wm.workspace) wm.focusWorkspace(wm.workspace);
+    }
+
     fn relocate(wm: *Wm, win: *Window, ws: u8) void {
-        if (win.workspace == ws) return wm.focus(win);
+        wm.move(win, ws);
+        wm.focus(win);
+    }
+
+    fn move(wm: *Wm, win: *Window, ws: u8) void {
+        if (ws == 0 or ws > config.workspace_count or win.workspace == ws) return;
         const old = win.workspace;
         win.workspace = ws;
         wm.forget(win, old, std.mem.indexOfScalar(*Window, wm.windows.items, win).?);
@@ -375,7 +394,6 @@ pub const Wm = struct {
             win.proxy.informNotFullscreen();
             win.fullscreen = false;
         }
-        wm.focus(win);
     }
 
     fn focusNext(wm: *Wm) void {
