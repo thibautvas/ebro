@@ -76,6 +76,7 @@ Available actions:
 | `.{ .focus_workspace = n }` | Switch to workspace `n` (1-based) |
 | `.{ .move_to_workspace = n }` | Move the focused window to workspace `n` and follow it there |
 | `.{ .summon = "id" }` | Move the first window with app_id `id` to the current workspace and focus it |
+| `.reset_rules` | Move every window matching a rule back to its rule's workspace, staying on the current one |
 | `.focus_next` | Focus the next window on the current workspace, wrapping around |
 | `.swap_master` | Swap the focused window with the master window |
 | `.toggle_fullscreen` | Toggle fullscreen for the focused window |
